@@ -1,7 +1,5 @@
 import  knowledgeBase  from '../data/knowledgeBase';
 
-
-
 function findAnswer(userInput) {
   const lowerInput = userInput.toLowerCase();
 

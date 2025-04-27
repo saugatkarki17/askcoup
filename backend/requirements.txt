@@ -1,3 +1,8 @@
 fastapi
 uvicorn
-cle
+pinecone
+sentence-transformers
+google-generativeai
+langchain-community
+langchain-pinecone
+python-dotenv

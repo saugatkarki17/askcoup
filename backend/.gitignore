@@ -1,0 +1,33 @@
+# Logs
+logs
+*.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Environment variables
+.env
+
+# Byte-compiled files
+*.pyc
+
+# Virtual environments
+venv/
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.njsproj
+*.sln
+*.sw?
+
+# Test coverage
+.coverage
+htmlcov/
+
+# Other
+*.lock
+*.bak
+*.tmp
