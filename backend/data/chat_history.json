@@ -34,9 +34,28 @@
         "created_at": "2025-04-27T16:50:44.530908",
         "title": "New Chat"
     },
-    "222b33df-78d0-4696-91c8-ad2ab224b821": {
+    "21a19d5b-e5a0-41f3-8517-d410ae3a3092": {
         "messages": [],
-        "created_at": "2025-04-27T16:50:44.741159",
+        "created_at": "2025-04-27T17:19:26.246317",
+        "title": "New Chat"
+    },
+    "ec1dcc8c-38b3-49af-a3d3-dbd78cb9e46c": {
+        "messages": [
+            {
+                "sender": "user",
+                "text": "hi"
+            },
+            {
+                "sender": "bot",
+                "text": "Hello! How can I help you today with your questions about Caldwell University?"
+            }
+        ],
+        "created_at": "2025-04-27T17:19:26.247589",
+        "title": "hi"
+    },
+    "36e78ed6-2ee3-4eb0-b7e8-6da4a693c9c0": {
+        "messages": [],
+        "created_at": "2025-04-27T17:19:55.688747",
         "title": "New Chat"
     }
 }

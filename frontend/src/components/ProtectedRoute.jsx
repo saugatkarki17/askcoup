@@ -1,7 +1,6 @@
 // frontend/src/components/ProtectedRoute.jsx
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Ensure correct path
 
 // A component that redirects to /auth if the user is not logged in
 export default function ProtectedRoute({ children }) {
