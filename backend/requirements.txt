@@ -6,3 +6,4 @@ google-generativeai
 langchain-community
 langchain-pinecone
 python-dotenv
+pdfplumber
