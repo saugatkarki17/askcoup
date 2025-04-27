@@ -1,14 +1,26 @@
 # backend/app/services/vectorstore.py
-import os
 
-# from pinecone import Pinecone # No longer needed here for initialization
+import uuid
 
-# We will get the initialized index object from main.py
+def store_in_pinecone(pinecone_index_obj, embedding, metadata: dict):
+    """Stores a single embedding with metadata into the Pinecone index."""
+    if pinecone_index_obj is None:
+        print("Pinecone index object not provided to store_in_pinecone.")
+        return
 
-# Remove global pinecone_index = None
-# Remove initialize_pinecone() function
+    try:
+        print(f"Storing embedding to Pinecone...")
+        pinecone_index_obj.upsert(
+            vectors=[{
+                "id": str(uuid.uuid4()),  # generate a unique ID for each entry
+                "values": embedding,
+                "metadata": metadata
+            }]
+        )
+        print("Embedding stored successfully.")
+    except Exception as e:
+        print(f"Error storing embedding to Pinecone: {e}")
 
-# The query function now accepts the Pinecone index object
 def query_vector_store(pinecone_index_obj, embedding, top_k: int = 3):
     """Queries the Pinecone index with the given embedding."""
     if pinecone_index_obj is None:
@@ -17,14 +29,12 @@ def query_vector_store(pinecone_index_obj, embedding, top_k: int = 3):
 
     try:
         print(f"Querying Pinecone with top_k={top_k}...")
-        # Use the provided index object for the query
         query_results = pinecone_index_obj.query(
             vector=embedding,
             top_k=top_k,
-            include_metadata=True # Make sure to include metadata to get the text back
+            include_metadata=True  # include metadata to retrieve text
         )
 
-        # Process query_results to extract relevant information (the text chunks)
         relevant_docs = []
         if query_results and query_results.matches:
             for match in query_results.matches:
@@ -36,5 +46,3 @@ def query_vector_store(pinecone_index_obj, embedding, top_k: int = 3):
     except Exception as e:
         print(f"Error querying Pinecone: {e}")
         return []
-
-# Remove the call to initialize_pinecone() at the end of the file
