@@ -1,199 +1,162 @@
-// import ChatWindow from "../components/ChatWindow";
+// frontend/src/pages/ChatbotPage.jsx
 
-// function ChatbotPage() {
-//   return (
-//     <div className="flex justify-center items-center p-6">
-//       <ChatWindow />
-//     </div>
-//   );
-// }
+import { useState, useEffect } from 'react';
+import ChatWindow from '../components/ChatWindow'; // Ensure correct path to your ChatWindow component
+import Sidebar from '../components/Sidebar'; // Ensure correct path to your Sidebar component
 
-// export default ChatbotPage;
+// Assuming api.js is in services folder relative to src
+import { startNewConversation, getConversationHistory } from '../services/api'; // Ensure correct path
 
-// Assuming this is in frontend/src/pages/ChatbotPage.jsx
 
-import { useState, useRef, useEffect } from "react";
-// Remove the import for findAnswer as we will use the backend API
-// import findAnswer from "../utils/findAnswer";
+function ChatbotPage() {
+    // State to hold the ID of the currently active conversation
+    const [activeConversationId, setActiveConversationId] = useState(null);
+    // State to hold the messages for the active conversation displayed in ChatWindow
+    const [currentConversationMessages, setCurrentConversationMessages] = useState([]);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(true); // Start in loading state
 
-// Import the API service function
-import { sendMessageToBot } from "../services/api"; // Correct import path
 
-export default function Chatbot() { // If this component is named differently in your project, adjust accordingly
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(false); // Add loading state
-  const chatAreaRef = useRef(null);
+    // Add log here to see state changes
+    useEffect(() => {
+        console.log("DEBUG (ChatbotPage State): isLoadingHistory:", isLoadingHistory);
+        console.log("DEBUG (ChatbotPage State): activeConversationId:", activeConversationId);
+        console.log("DEBUG (ChatbotPage State): currentConversationMessages.length:", currentConversationMessages.length);
+    }, [isLoadingHistory, activeConversationId, currentConversationMessages]);
 
-  useEffect(() => {
-    // Scroll to the bottom of the chat area whenever messages update (and when isLoading changes to false)
-    if (!isLoading) {
-         chatAreaRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, isLoading]); // Add isLoading to dependency array
 
-  // Make handleSend an async function because sendMessageToBot is async
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return; // Prevent empty messages or sending while loading
+    // Effect to always create a new conversation when the page loads
+    useEffect(() => {
+        const initializeNewConversation = async () => {
+            console.log("Creating a new conversation by default.");
+            setIsLoadingHistory(true); // Show loading state while creating
+             try {
+                const newConvo = await startNewConversation();
+                setActiveConversationId(newConvo.id);
+                setCurrentConversationMessages([]); // New convo starts empty
+                // We won't save the new ID to localStorage if we always default to new
+                console.log(`Created initial new conversation with ID: ${newConvo.id}`);
+                // State updates will be logged by the effect above
+             } catch (error) {
+                 console.error("Error creating initial new conversation:", error);
+                 // Handle error if new chat creation fails
+             } finally {
+                 console.log("DEBUG (initializeNewConversation): Setting isLoadingHistory to false.");
+                 setIsLoadingHistory(false); // Hide loading state
+             }
+        };
 
-    const userMessage = { text: input, sender: "user" };
-    // Add the user message to the state immediately
-    setMessages(prevMessages => [...prevMessages, userMessage]);
-    setInput(""); // Clear the input field
+        initializeNewConversation();
 
-    setIsLoading(true); // Set loading state to true
+        // Clean up function if needed
+        // return () => { /* cleanup */ };
 
-    try {
-      // Call the backend API instead of findAnswer
-      const botReply = await sendMessageToBot(input);
+    }, []); // Empty dependency array means run once on mount
 
-      // Add the bot's message to the state once the API call is complete
-      const botMessage = { text: botReply, sender: "bot" };
-      setMessages(prevMessages => [...prevMessages, botMessage]);
 
-    } catch (error) {
-      console.error("Error sending message to backend:", error);
-      // Add an error message to the chat
-      const errorMessage = { text: "Sorry, there was an error getting a response.", sender: "bot" };
-      setMessages(prevMessages => [...prevMessages, errorMessage]);
-    } finally {
-      setIsLoading(false); // Set loading state back to false
-    }
-  };
+    // Function to handle selecting a conversation from the sidebar
+    const handleSelectConversation = async (conversationId) => {
+        // Prevent re-selecting same convo or attempting while initialization/loading is in progress
+        if (activeConversationId === conversationId || isLoadingHistory) {
+             console.log("Ignoring select conversation:", conversationId, "Active:", activeConversationId, "Loading:", isLoadingHistory);
+             return;
+        }
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) { // Send on Enter, allow Shift+Enter for new line
-        e.preventDefault(); // Prevent default Enter behavior (like new line in textarea)
-        handleSend(); // Send on Enter key
-    }
-  };
+        console.log(`Selecting conversation: ${conversationId}`);
+        setIsLoadingHistory(true); // Show loading state while fetching history
+        try {
+            const convo = await getConversationHistory(conversationId);
+            if (convo && convo.messages) { // Ensure convo and messages exist
+                setActiveConversationId(convo.id);
+                setCurrentConversationMessages(convo.messages);
+                localStorage.setItem('lastConversationId', convo.id); // Save last selected convo ID (Optional - remove if always new chat is desired)
+                console.log(`Loaded history for conversation: ${convo.id} with ${convo.messages.length} messages.`);
+                // State updates will be logged by the effect above
+            } else {
+                console.error(`Conversation ${conversationId} not found or empty in history.`);
+                // Handle error or empty convo - maybe select a new chat or just log
+            }
+        } catch (error) {
+             console.error(`Error fetching conversation history for ${conversationId}:`, error);
+             // Handle fetch error
+        } finally {
+             console.log("DEBUG (handleSelectConversation): Setting isLoadingHistory to false.");
+             setIsLoadingHistory(false); // Hide loading state
+        }
+    };
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-      <div className="w-full h-screen bg-gray-800 flex flex-col">
-        {/* Header */}
-        <div className="bg-gray-800 text-white p-6 flex items-center justify-center">
-          <div className="bg-gradient-to-r from-purple-800 to-indigo-900 text-white rounded-xl p-6 shadow-lg text-center">
-            <h1 className="text-2xl font-semibold">Ask Coug</h1>
-            <p className="text-sm text-indigo-200 mt-1">Your intelligent companion</p>
-          </div>
-        </div>
 
-        {/* Chat Area with Scroll */}
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col">
-          {messages.length === 0 ? (
-            <div className="text-center text-gray-500 mt-10">
-              <span role="img" aria-label="sparkles">✨</span> Start the conversation! Ask me anything...
-            </div>
+     // Function to handle creating a new conversation (called by Sidebar)
+     // Keep this function the same - it gets the new ID and updates state
+    const handleCreateNewConversation = (newConversationId) => {
+        // The Sidebar component already calls the API and notifies us the new ID
+        setActiveConversationId(newConversationId);
+        setCurrentConversationMessages([]); // New convo starts empty
+        localStorage.setItem('lastConversationId', newConversationId); // Save the new convo ID as the last selected (Optional - remove if always new chat is desired)
+        console.log(`Started new conversation: ${newConversationId}`);
+        // No need to set isLoadingHistory here, as Sidebar handles its own loading state for the button
+    };
+
+
+    // Function to handle deleting a conversation (called by Sidebar)
+    const handleDeleteConversation = (deletedConversationId) => {
+        console.log(`Conversation ${deletedConversationId} was deleted.`);
+        // If the deleted conversation was the one currently active...
+        if (activeConversationId === deletedConversationId) {
+            console.log("Deleted active conversation. Starting a new one.");
+            // ... clear the current view and start a new chat by default
+            setActiveConversationId(null); // Clear active ID
+            setCurrentConversationMessages([]); // Clear messages
+            // We should probably trigger a new chat creation here if the active one is deleted
+            // For now, let the user manually click "New Chat" or refresh
+             localStorage.removeItem('lastConversationId'); // Remove from local storage if used
+        }
+        // Sidebar component already removes it from its list and refreshes summaries if needed
+    };
+
+
+    // Function to update messages for the active conversation (called by ChatWindow after send/reply)
+    const handleMessageSent = (userMessage, botReply) => {
+        // This function is called by ChatWindow after a round trip (user -> bot)
+        // The messages are already saved in the backend by ChatWindow's API call
+        // We update the state here so ChatWindow re-renders with the new messages
+         setCurrentConversationMessages(prevMessages => [...prevMessages, userMessage, botReply]);
+         console.log(`Messages updated for conversation ${activeConversationId}`);
+         // Note: If you implement updating sidebar summary, do it here or in Sidebar's useEffect
+    };
+
+
+    // --- Layout using flex and h-screen/w-64 ---
+    return (
+      // Main container: flex layout, full screen height, dark background from original theme
+      // Use bg-gray-900 for background
+      <div className="flex h-screen bg-gray-900 text-white mobile:flex-col">
+
+        {/* Sidebar component */}
+        <Sidebar
+           activeConversationId={activeConversationId}
+           onSelectConversation={handleSelectConversation}
+           onCreateNewConversation={handleCreateNewConversation}
+           onDeleteConversation={handleDeleteConversation} // Pass the delete handler
+        />
+
+        {/* Main Chat Area: Takes the remaining width, is a flex column */}
+        <div className="flex-1 flex flex-col">
+          {/* Conditionally render loading state, the ChatWindow, or a placeholder message */}
+          {isLoadingHistory ? (
+              // Loading state message (use a text color consistent with the theme)
+              <div className="flex-1 flex items-center justify-center text-gray-400">Loading chat history...</div>
+          ) : activeConversationId ? (
+              <ChatWindow
+                  conversationId={activeConversationId}
+                  initialMessages={currentConversationMessages} // Pass messages to display
+                  onMessageSent={handleMessageSent} // Pass callback for when messages are sent
+              />
           ) : (
-            messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex mb-2 ${
-                  msg.sender === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-2xl p-3 rounded-lg ${
-                    msg.sender === "user"
-                      ? "bg-indigo-600 text-white rounded-br-none"
-                      : "bg-gray-700 text-gray-300 rounded-bl-none"
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              </div>
-            ))
+              <div className="flex-1 flex items-center justify-center text-gray-400">Select a chat from the sidebar or start a new one.</div>
           )}
-          {/* Loading indicator */}
-          {isLoading && (
-             <div className="flex justify-start mb-2">
-                <div className="max-w-xs p-3 rounded-lg bg-gray-700 text-gray-300 rounded-bl-none">
-                    <div className="dot-typing"></div> {/* Simple loading animation CSS needed */}
-                </div>
-             </div>
-          )}
-          <div ref={chatAreaRef} /> {/* For auto-scrolling */}
-        </div>
-
-        {/* Input Area */}
-        <div className="bg-gray-800 p-6 border-t border-gray-700">
-          <div className="flex items-center">
-            <input
-              type="text" // Changed from 'textarea' to 'input' based on original code, but 'textarea' is often better for chat input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 p-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-700 text-white placeholder-gray-400"
-              placeholder={isLoading ? "Thinking..." : "Ask away..."} // Update placeholder while loading
-              disabled={isLoading} // Disable input while loading
-            />
-            <button
-              onClick={handleSend}
-              className={`bg-indigo-600 text-white px-6 py-3 rounded-lg ml-2 hover:bg-indigo-700 transition-colors font-medium ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              disabled={isLoading} // Disable button while loading
-            >
-              {isLoading ? "Sending..." : "Send"} {/* Update button text while loading */}
-            </button>
-          </div>
         </div>
       </div>
-    </div>
-  );
+    );
 }
 
-// You might need to add CSS for the dot-typing animation.
-// Example CSS (add this to your App.css or index.css):
-/*
-.dot-typing {
-  position: relative;
-  left: -10px;
-  width: 5px;
-  height: 5px;
-  border-radius: 5px;
-  background-color: #989b9e;
-  color: #989b9e;
-  animation: dotTyping 1.5s infinite linear;
-}
-
-.dot-typing::before,
-.dot-typing::after {
-  content: "";
-  display: inline-block;
-  position: absolute;
-  top: 0;
-  width: 5px;
-  height: 5px;
-  border-radius: 5px;
-  background-color: #989b9e;
-  color: #989b9e;
-}
-
-.dot-typing::before {
-  left: -10px;
-  animation: dotTyping 1.5s infinite linear -.5s;
-}
-
-.dot-typing::after {
-  left: 10px;
-  animation: dotTyping 1.5s infinite linear -1s;
-}
-
-@keyframes dotTyping {
-  0% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(10px);
-  }
-  75% {
-    transform: translateX(10px);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-*/
+export default ChatbotPage;

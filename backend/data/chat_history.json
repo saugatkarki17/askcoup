@@ -1,0 +1,42 @@
+{
+    "002349d8-8d00-4142-a7d3-7301dfe55bd2": {
+        "messages": [
+            {
+                "sender": "user",
+                "text": "Hello CougAI"
+            },
+            {
+                "sender": "bot",
+                "text": "Hello! How can I help you with information about Caldwell University today?\n"
+            },
+            {
+                "sender": "user",
+                "text": "Can you give me office of Vlad"
+            },
+            {
+                "sender": "bot",
+                "text": "I am sorry, I cannot find the information about Vlad in the context.\n"
+            },
+            {
+                "sender": "user",
+                "text": "Hello"
+            },
+            {
+                "sender": "bot",
+                "text": "Hello! How can I help you today?\n"
+            }
+        ],
+        "created_at": "2025-04-27T14:39:22.883743",
+        "title": "Hello CougAI"
+    },
+    "3f4dd6ad-6012-409a-b3d2-703a341df18f": {
+        "messages": [],
+        "created_at": "2025-04-27T16:50:44.530908",
+        "title": "New Chat"
+    },
+    "222b33df-78d0-4696-91c8-ad2ab224b821": {
+        "messages": [],
+        "created_at": "2025-04-27T16:50:44.741159",
+        "title": "New Chat"
+    }
+}
